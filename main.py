@@ -1,26 +1,46 @@
 #!/usr/bin/env python3
-"""Entry point for the 23 November 2026 news-image entry.
+"""Entry point for the make.fun news-image-20261123 submission.
 
-The picture itself is drawn ahead of time by build_image.py and stored
-next to this file as image.png. All this program does is place a copy of
-it where the grader looks for it. It needs no network, no extra packages
-and no clock, so two runs always produce the same file.
+What it does, in one sentence: take the front page that
+``build_image.py`` already painted (``image.png`` in this same folder)
+and place an exact copy of it at ``$MAKEFUN_OUTPUT_DIR/entry.png``.
+
+Nothing here touches the network, the clock, or any random source, so
+running it twice gives byte-identical output.  The default output
+folder is ``/output`` when ``MAKEFUN_OUTPUT_DIR`` is not set, which
+matches the competition's runner.
 """
 
 import os
 import shutil
-import sys
+from pathlib import Path
+
+SOURCE_NAME = "image.png"
+TARGET_NAME = "entry.png"
+FALLBACK_DIR = "/output"
 
 
-def main():
-    here = os.path.dirname(os.path.abspath(__file__))
-    source = os.path.join(here, "image.png")
-    target_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-    os.makedirs(target_dir, exist_ok=True)
-    target = os.path.join(target_dir, "entry.png")
-    shutil.copyfile(source, target)
-    return 0
+def where_to_write() -> Path:
+    """Resolve the output folder from the environment, or the default."""
+    chosen = os.environ.get("MAKEFUN_OUTPUT_DIR") or FALLBACK_DIR
+    return Path(chosen).expanduser()
+
+
+def locate_source() -> Path:
+    """The picture lives next to this file, wherever the repo is checked out."""
+    return Path(__file__).resolve().parent / SOURCE_NAME
+
+
+def run() -> Path:
+    """Copy the picture into place and hand back the path that was written."""
+    origin = locate_source()
+    destination_dir = where_to_write()
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    destination = destination_dir / TARGET_NAME
+    shutil.copyfile(origin, destination)
+    return destination
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    written = run()
+    print(f"entry written to {written}")
